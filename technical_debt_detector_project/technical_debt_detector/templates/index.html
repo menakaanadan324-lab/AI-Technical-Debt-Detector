@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Technical Debt Detection & Refactoring System</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --slate: #334155;
+            --border: #e2e8f0;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: var(--slate);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border-top: 5px solid var(--primary);
+        }
+
+        .badge-academic {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        header h1 {
+            color: var(--dark);
+            font-size: 1.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .presets-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-preset {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .btn-preset:hover {
+            background: #e2e8f0;
+            color: var(--dark);
+        }
+
+        textarea {
+            width: 100%;
+            height: 240px;
+            padding: 1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            resize: vertical;
+            background: #fafafa;
+            color: #1e293b;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: var(--success-hover); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .metric-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-high { background: #fee2e2; color: #b91c1c; }
+        .badge-medium { background: #fef3c7; color: #b45309; }
+        .badge-low { background: #e0f2fe; color: #0369a1; }
+
+        .finding-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+        }
+
+        .finding-card.high { border-left-color: var(--danger); }
+        .finding-card.medium { border-left-color: var(--warning); }
+        .finding-card.low { border-left-color: var(--primary); }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--dark);
+        }
+
+        .finding-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-rec {
+            font-size: 0.92rem;
+            color: #334155;
+            background: #f8fafc;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            border-left: 3px solid #94a3b8;
+        }
+
+        .diff-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .diff-container { grid-template-columns: 1fr; }
+        }
+
+        .code-box {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            min-height: 200px;
+        }
+
+        .changes-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .changes-list li {
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span class="badge-academic">ISWE302L - Artificial Intelligence | Course Project</span>
+        <h1>AI-Powered Autonomous Technical Debt Detection and Refactoring System</h1>
+        <p>AST-driven Static Analysis, Complexity Metric Extraction & Autonomous Refactoring</p>
+    </header>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">1. Source Code Input</span>
+            <div class="presets-bar">
+                <button type="button" class="btn-preset" onclick="loadReview1()">🛒 Load Review 1 Example</button>
+                <button type="button" class="btn-preset" onclick="loadDebt()">⚠️ Load Complex Debt</button>
+                <button type="button" class="btn-preset" onclick="loadClean()">🟢 Load Clean Code</button>
+                <button type="button" class="btn-preset" onclick="clearAll()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <textarea id="code-input" placeholder="Paste your Python source code here to analyze technical debt..."></textarea>
+
+        <div class="actions-bar">
+            <button class="btn btn-primary" id="btn-analyze" onclick="analyzeCode()">🔍 Detect Technical Debt</button>
+            <button class="btn btn-success" id="btn-refactor" onclick="refactorCode()">⚡ Autonomous Refactoring</button>
+        </div>
+    </div>
+
+    <div id="results-section" style="display: none;">
+        <h2 style="margin-bottom: 1rem; color: var(--dark); font-size: 1.35rem;">2. Technical Debt Dashboard & Metrics</h2>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Health Score</div>
+                <div class="metric-value" id="val-score">100/100</div>
+                <div class="metric-sub" id="val-severity-tag">LOW DEBT</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Lines of Code (LOC)</div>
+                <div class="metric-value" id="val-loc">0</div>
+                <div class="metric-sub">Feature Extraction</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Cyclomatic Complexity</div>
+                <div class="metric-value" id="val-complexity">1</div>
+                <div class="metric-sub" id="val-nested-tag">Branching Count</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Maintainability Index</div>
+                <div class="metric-value" id="val-maintainability">100%</div>
+                <div class="metric-sub">Software Metric</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Detected Code Smells</div>
+                <div class="metric-value" id="val-issues">0</div>
+                <div class="metric-sub">Debt Items</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--dark); font-size: 1.15rem;">Detected Technical Debt & AI Recommendations</h3>
+            <div id="findings-container"></div>
+        </div>
+    </div>
+
+    <div id="refactor-section" class="card" style="display: none;">
+        <div class="card-header">
+            <h3 style="color: var(--dark); font-size: 1.25rem;">3. Autonomous Refactoring Module (Before vs After)</h3>
+            <button class="btn-preset" onclick="copyRefactoredCode()">📋 Copy Refactored Code</button>
+        </div>
+
+        <ul class="changes-list" id="changes-container"></ul>
+
+        <div class="diff-container">
+            <div>
+                <h4 style="margin-bottom: 0.5rem; color: var(--danger);">Legacy Code (Technical Debt)</h4>
+                <div class="code-box" id="diff-original"></div>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 0.5rem; color: var(--success);">Refactored Code (Modular / Clean)</h4>
+                <div class="code-box" id="diff-refactored"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const REVIEW1_EXAMPLE = "# Real-world example: Online Shopping Order Processing\n" +
+"def process_order(order):\n" +
+"    if order is not None:\n" +
+"        if order.payment_done:\n" +
+"            if order.stock_available:\n" +
+"                if order.address_valid:\n" +
+"                    print('Order Placed')\n" +
+"                else:\n" +
+"                    print('Invalid Address')\n" +
+"            else:\n" +
+"                print('Out of Stock')\n" +
+"        else:\n" +
+"            print('Payment Failed')";
+
+    const DEBT_EXAMPLE = "def calculate_salary(emp, bonus_flag):\n" +
+"    tax = 0.18\n" +
+"    discount = 50\n" +
+"    res = []\n" +
+"    if bonus_flag == True:\n" +
+"        for i in range(len(emp)):\n" +
+"            if emp[i]['exp'] > 5:\n" +
+"                if emp[i]['rating'] > 4:\n" +
+"                    val = emp[i]['base'] * (1 + tax) + 500\n" +
+"                    res.append(val)\n" +
+"                else:\n" +
+"                    val = emp[i]['base'] * (1 + tax)\n" +
+"                    res.append(val)\n" +
+"            else:\n" +
+"                res.append(0)\n" +
+"    else:\n" +
+"        for i in range(len(emp)):\n" +
+"            if emp[i]['exp'] > 5:\n" +
+"                val = emp[i]['base'] * (1 + tax)\n" +
+"                res.append(val)\n" +
+"            else:\n" +
+"                res.append(0)\n" +
+"    try:\n" +
+"        avg = sum(res) / len(res)\n" +
+"    except:\n" +
+"        pass\n" +
+"    return res";
+
+    const CLEAN_EXAMPLE = "def calculate_discounted_total(price: float, tax_rate: float, discount: float = 0.0) -> float:\n" +
+"    \"\"\"Calculate the final order total including tax and optional discount.\"\"\"\n" +
+"    if price < 0 or tax_rate < 0:\n" +
+"        raise ValueError('Price and tax rate must be non-negative.')\n" +
+"    subtotal = price * (1.0 + tax_rate)\n" +
+"    return max(0.0, subtotal - discount)";
+
+    function loadReview1() {
+        document.getElementById('code-input').value = REVIEW1_EXAMPLE;
+    }
+
+    function loadDebt() {
+        document.getElementById('code-input').value = DEBT_EXAMPLE;
+    }
+
+    function loadClean() {
+        document.getElementById('code-input').value = CLEAN_EXAMPLE;
+    }
+
+    function clearAll() {
+        document.getElementById('code-input').value = '';
+        document.getElementById('results-section').style.display = 'none';
+        document.getElementById('refactor-section').style.display = 'none';
+    }
+
+    async function analyzeCode() {
+        const textarea = document.getElementById('code-input');
+        const code = textarea.value.trim();
+        const btn = document.getElementById('btn-analyze');
+
+        if (!code) {
+            alert('Please paste some Python code to analyze.');
+            return;
+        }
+
+        btn.textContent = 'Analyzing...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            });
+
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById('val-score').textContent = data.score + '/100';
+            const scoreCard = document.getElementById('val-score');
+            if (data.score >= 80) scoreCard.style.color = '#10b981';
+            else if (data.score >= 55) scoreCard.style.color = '#f59e0b';
+            else scoreCard.style.color = '#ef4444';
+
+            document.getElementById('val-severity-tag').textContent = (data.severity_level || 'LOW') + ' SEVERITY';
+            document.getElementById('val-loc').textContent = data.metrics ? data.metrics.loc : code.split('\n').length;
+            document.getElementById('val-complexity').textContent = data.metrics ? data.metrics.complexity : 1;
+            document.getElementById('val-nested-tag').textContent = (data.metrics && data.metrics.nested_ifs > 0) ? (data.metrics.nested_ifs + ' Nested Ifs') : 'Linear Flow';
+            document.getElementById('val-maintainability').textContent = data.metrics ? data.metrics.maintainability : '85%';
+            document.getElementById('val-issues').textContent = data.total || (data.findings ? data.findings.length : 0);
+
+            const container = document.getElementById('findings-container');
+            container.innerHTML = '';
+
+            if (!data.findings || data.findings.length === 0) {
+                container.innerHTML = '<p style="color: #10b981; font-weight: 600;">✨ No significant technical debt detected. Code adheres to clean quality guidelines!</p>';
+            } else {
+                data.findings.forEach(function(item) {
+                    const sev = (item.severity || 'low').toLowerCase();
+                    const card = document.createElement('div');
+                    card.className = 'finding-card ' + sev;
+                    card.innerHTML = 
+                        '<div class="finding-header">' +
+                            '<span class="finding-title">' + (item.title || item.name || 'Code Issue') + (item.line ? ' (Line ' + item.line + ')' : '') + '</span>' +
+                            '<span class="badge badge-' + sev + '">' + sev.toUpperCase() + ' SEVERITY</span>' +
+                        '</div>' +
+                        '<div class="finding-meta"><strong>Category:</strong> ' + (item.category || 'Maintainability') + '</div>' +
+                        '<div class="finding-rec"><strong>Recommendation:</strong> ' + (item.recommendation || 'Refactor code block.') + '</div>';
+                    container.appendChild(card);
+                });
+            }
+
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (err) {
+            console.error(err);
+            alert('Failed to analyze code. Make sure your Flask server is running in the terminal.');
+        } finally {
+            btn.textContent = '🔍 Detect Technical Debt';
+            btn.disabled = false;
+        }
+    }
+
+    async function refactorCode() {
+        const textarea = document.getElementById('code-input');
+        const code = textarea.value.trim();
+        const btn = document.getElementById('btn-refactor');
+
+        if (!code) {
+            alert('Please paste some code to refactor.');
+            return;
+        }
+
+        btn.textContent = 'Refactoring...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/refactor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            });
+
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            const changesContainer = document.getElementById('changes-container');
+            changesContainer.innerHTML = '';
+            const changesList = data.changes || ['Code formatted and normalized.'];
+            changesList.forEach(function(change) {
+                const li = document.createElement('li');
+                li.innerHTML = '✔ ' + change;
+                changesContainer.appendChild(li);
+            });
+
+            document.getElementById('diff-original').textContent = code;
+            document.getElementById('diff-refactored').textContent = data.refactored_code;
+
+            document.getElementById('refactor-section').style.display = 'block';
+            document.getElementById('refactor-section').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (err) {
+            console.error(err);
+            alert('Failed to refactor code.');
+        } finally {
+            btn.textContent = '⚡ Autonomous Refactoring';
+            btn.disabled = false;
+        }
+    }
+
+    function copyRefactoredCode() {
+        const refactoredText = document.getElementById('diff-refactored').textContent;
+        navigator.clipboard.writeText(refactoredText).then(function() {
+            alert('Refactored code copied to clipboard!');
+        });
+    }
+</script>
+
+</body>
+</html>
